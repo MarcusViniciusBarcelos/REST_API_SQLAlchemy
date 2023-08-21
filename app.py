@@ -3,13 +3,35 @@ from flask import (Flask,
 from flask_restful import (Resource,
                            Api)
 from models import (Pessoas,
-                    Atividades)
+                    Atividades,
+                    Usuarios)
+from flask_httpauth import HTTPBasicAuth
 
+auth = HTTPBasicAuth()
 app = Flask(__name__)
 api = Api(app)
 
+# USUARIOS = {
+#    'Marcus': '123',
+#    'Vinicius': '321'
+# }
+
+
+# @auth.verify_password
+# def verificacao(login, senha):
+#    if not (login and senha):
+#        return False
+#    return USUARIOS.get(login) == senha
+
+@auth.verify_password
+def verificacao(login, senha):
+    if not(login and senha):
+        return False
+    return Usuarios.query.filter_by(login=login, senha=senha).first()
+
 
 class Pessoa(Resource):
+    @auth.login_required
     def get(self, nome):
         pessoa = Pessoas.query.filter_by(nome=nome).first()
         try:
@@ -25,6 +47,7 @@ class Pessoa(Resource):
             }
         return response
 
+    @auth.login_required
     def put(self, nome):
         pessoa = Pessoas.query.filter_by(nome=nome).first()
         try:
@@ -46,6 +69,7 @@ class Pessoa(Resource):
             }
         return response
 
+    @auth.login_required
     def delete(self, nome):
         pessoa = Pessoas.query.filter_by(nome=nome).first()
         try:
@@ -62,6 +86,7 @@ class Pessoa(Resource):
 
 
 class ListaPessoas(Resource):
+    @auth.login_required
     def get(self):
         pessoas = Pessoas.query.all()
         try:
@@ -92,6 +117,7 @@ class ListaPessoas(Resource):
 
 
 class Atividade(Resource):
+    @auth.login_required
     def get(self, id):
         atividades = Atividades.query.get(id)
         try:
@@ -105,6 +131,7 @@ class Atividade(Resource):
             }
         return response
 
+    @auth.login_required
     def put(self, id):
         atividade = Atividades.query.get(id)
         try:
@@ -123,7 +150,8 @@ class Atividade(Resource):
             }
         return response
 
-    def delete(self,id):
+    @auth.login_required
+    def delete(self, id):
         atividade = Atividades.query.get(id)
         try:
             atividade.delete()
@@ -141,7 +169,7 @@ class Atividade(Resource):
 class ListaAtividades(Resource):
     def get(self):
         atividades = Atividades.query.all()
-        response = [{'id': i.id, 'nome': i.nome, 'pessoa': i.pessoa.nome}for i in atividades]
+        response = [{'id': i.id, 'nome': i.nome, 'pessoa': i.pessoa.nome} for i in atividades]
         atividades.status()
         return response
 
@@ -155,7 +183,6 @@ class ListaAtividades(Resource):
             'nome': atividade.nome,
             'id': atividade.id,
         }
-        atividade.status()
         return response
 
 
